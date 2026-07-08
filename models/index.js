@@ -6,7 +6,8 @@ const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+// access the config.json file in the config folder.
+const config = require(path.join(__dirname, '..', 'config', 'config.js'))[env];
 const db = {};
 
 let sequelize;
@@ -15,6 +16,9 @@ if (config.use_env_variable) {
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
+// read the files in the models folder and require them.
+// filter the files to only include .js files and not include .test.js files.
+// map the files to the sequelize model. add the model to the db object. export the db object.
 
 fs
   .readdirSync(__dirname)
