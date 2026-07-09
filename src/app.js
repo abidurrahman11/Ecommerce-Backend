@@ -28,7 +28,12 @@ app.use('/health', healthRoutes);
 // Feature routes will be mounted here as they're built, example:
 // use auth routes for register, login and getting the logged in user.
 app.use('/api/auth', require('./routes/auth.routes'));
-// app.use('/api/products', require('./routes/product.routes'));
+// public category routes (list + tree) and admin category CRUD, same router handles both, guarded per route.
+app.use('/api/categories', require('./routes/category.routes'));
+// public product routes (list, detail, related products).
+app.use('/api/products', require('./routes/product.routes'));
+// admin only product CRUD, kept on a separate path so admin vs public concerns don't mix.
+app.use('/api/admin/products', require('./routes/admin.product.routes'));
 // app.use('/api/orders', require('./routes/order.routes'));
 // app.use('/api/payments', require('./routes/payment.routes'));
 
