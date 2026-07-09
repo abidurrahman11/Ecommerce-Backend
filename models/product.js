@@ -5,8 +5,7 @@ module.exports = (sequelize, DataTypes) => {
   class Product extends Model {
     static associate(models) {
       Product.belongsTo(models.Category, { foreignKey: 'category_id' });
-      // note: OrderItem model doesn't exist yet, add
-      // `Product.hasMany(models.OrderItem, ...)` here once it does.
+      Product.hasMany(models.OrderItem, { foreignKey: 'product_id' });
     }
   }
 

@@ -4,9 +4,9 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     // keep model associations here, actual behavior/logic lives in src/classes/User.js
-    // note: Order model doesn't exist yet
-    // here once it does. Left as a no-op for now so we don't reference an undefined model.
-    static associate(models) {}
+    static associate(models) {
+      User.hasMany(models.Order, { foreignKey: 'user_id' });
+    }
   }
 
   User.init(

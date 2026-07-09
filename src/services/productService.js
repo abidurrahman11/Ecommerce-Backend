@@ -1,5 +1,5 @@
 const { Product: ProductModel, Category: CategoryModel, sequelize } = require('../../models');
-const { Op } = require('sequelize');
+const { Op, ForeignKeyConstraintError } = require('sequelize');
 const Product = require('../classes/Product');
 const { NotFoundError, ConflictError } = require('../utils/AppError');
 const { getCategoryForest, findNodeById, collectDescendantIds } = require('../utils/categoryDFS');
@@ -37,7 +37,17 @@ async function deleteProduct(id) {
   if (!product) {
     throw new NotFoundError('Product not found');
   }
-  await product.destroy();
+
+  try {
+    await product.destroy();
+  } catch (err) {
+    // product is referenced by existing order items (onDelete: RESTRICT),
+    // turn the raw db error into a clean, expected 409 instead of a 500.
+    if (err instanceof ForeignKeyConstraintError) {
+      throw new ConflictError('Cannot delete a product that is part of an existing order');
+    }
+    throw err;
+  }
 }
 
 async function getProductById(id) {
