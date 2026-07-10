@@ -18,8 +18,10 @@ app.use(cors());
 const morganStream = { write: (msg) => logger.info(msg.trim()) };
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', { stream: morganStream }));
 
-// note: Stripe webhook route must be mounted with express.raw({ type: 'application/json' })
-// BEFORE this global express.json() middleware, on its own path, otherwise Stripe's signature verification will fail. Add it above this line when implemented.
+// stripe webhook needs the raw request body to verify its signature, so this
+// router is mounted here, before express.json() runs, on purpose.
+app.use('/api/payments', require('./routes/paymentWebhook.routes'));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -36,7 +38,10 @@ app.use('/api/products', require('./routes/product.routes'));
 app.use('/api/admin/products', require('./routes/admin.product.routes'));
 // orders always belong to a logged in user, create + view own orders.
 app.use('/api/orders', require('./routes/order.routes'));
-// app.use('/api/payments', require('./routes/payment.routes'));
+// authenticated payment routes (initiate/confirm/execute/query), mounted
+// after express.json() since these are normal parsed-json endpoints, unlike
+// the webhook router mounted above.
+app.use('/api/payments', require('./routes/payment.routes'));
 
 app.use(notFound);
 app.use(errorHandler);

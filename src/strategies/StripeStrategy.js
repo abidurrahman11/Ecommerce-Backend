@@ -1,7 +1,18 @@
 const Stripe = require('stripe');
 const PaymentStrategy = require('./PaymentStrategy');
 
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+// the stripe client is created lazily (on first actual use), not at module
+// load time. creating it eagerly at the top of the file would run the
+// moment anything requires this module (including jest auto-mocking it),
+// which can happen before dotenv has loaded STRIPE_SECRET_KEY into
+// process.env, causing a confusing "no apiKey provided" crash.
+let stripeClient = null;
+function getStripeClient() {
+  if (!stripeClient) {
+    stripeClient = Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+  return stripeClient;
+}
 
 // maps stripe's many payment intent statuses down to our 3 internal ones.
 function mapStripeStatus(stripeStatus) {
@@ -20,7 +31,7 @@ class StripeStrategy extends PaymentStrategy {
     // stripe expects the amount in the smallest currency unit (cents).
     const amountInCents = Math.round(order.total_amount * 100);
 
-    const intent = await stripe.paymentIntents.create({
+    const intent = await getStripeClient().paymentIntents.create({
       amount: amountInCents,
       currency: 'usd',
       metadata: { order_id: String(order.id) }
@@ -36,7 +47,7 @@ class StripeStrategy extends PaymentStrategy {
   // re-fetches the payment intent from stripe itself, never trust a status
   // the client claims, always ask the provider directly.
   async verifyAndComplete(paymentIntentId) {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const intent = await getStripeClient().paymentIntents.retrieve(paymentIntentId);
 
     return {
       transaction_id: intent.id,
@@ -48,7 +59,7 @@ class StripeStrategy extends PaymentStrategy {
   // verifies the webhook signature and parses the event, throws if the
   // signature doesn't check out (the controller turns that into a 400).
   parseWebhookEvent(rawBody, signature) {
-    return stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    return getStripeClient().webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
   }
 }
 
