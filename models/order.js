@@ -6,8 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Order.belongsTo(models.User, { foreignKey: 'user_id' });
       Order.hasMany(models.OrderItem, { as: 'items', foreignKey: 'order_id' });
-      // note: Payment model doesn't exist yet, add
-      // `Order.hasMany(models.Payment, ...)` here once it does.
+      // an order can have multiple payment attempts (e.g. a failed one, then a retry).
+      Order.hasMany(models.Payment, { as: 'payments', foreignKey: 'order_id' });
     }
   }
 
