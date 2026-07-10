@@ -34,7 +34,8 @@ app.use('/api/categories', require('./routes/category.routes'));
 app.use('/api/products', require('./routes/product.routes'));
 // admin only product CRUD, kept on a separate path so admin vs public concerns don't mix.
 app.use('/api/admin/products', require('./routes/admin.product.routes'));
-// app.use('/api/orders', require('./routes/order.routes'));
+// orders always belong to a logged in user, create + view own orders.
+app.use('/api/orders', require('./routes/order.routes'));
 // app.use('/api/payments', require('./routes/payment.routes'));
 
 app.use(notFound);
