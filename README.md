@@ -97,4 +97,12 @@ Covers: password hashing, deterministic order-total/stock-reduction algorithms, 
 
 ## Deployment
 
-Docker setup covered separately — not required to run the app locally as shown above.
+See [`docs/deployment.md`](docs/deployment.md) for the full guide: environment configuration reference, Docker (backend + Postgres + Redis), running the backend locally via ngrok, and pointers for deploying the frontend to Vercel.
+
+Quick start with Docker:
+```bash
+cp .env.example .env   # fill in real values
+docker compose up --build
+docker compose exec app npm run migrate
+docker compose exec app npm run seed
+```
