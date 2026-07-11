@@ -12,7 +12,25 @@ const app = express();
 // use helmet to secure the app.
 app.use(helmet());
 // use cors to allow the app to be accessed from other domains.
-app.use(cors());
+// in development (and in tests), allow any origin so the vite frontend can
+// call us freely from whatever port it happens to run on. in production,
+// only allow the exact origins listed in CORS_ORIGINS (comma separated),
+// e.g. your deployed frontend's Vercel URL.
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // no origin means a non-browser client (curl, postman, server-to-server), always allow.
+    if (!origin) return callback(null, true);
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`Origin "${origin}" is not allowed by CORS`));
+  }
+};
+app.use(cors(corsOptions));
 // use morgan to log the requests.
 // morgan is a middleware that logs the requests to the console.
 const morganStream = { write: (msg) => logger.info(msg.trim()) };
