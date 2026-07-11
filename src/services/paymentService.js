@@ -4,6 +4,7 @@ const {
   Order: OrderModel,
   OrderItem: OrderItemModel
 } = require('../../models');
+const { UniqueConstraintError } = require('sequelize');
 const Payment = require('../classes/Payment');
 const PaymentContext = require('../strategies/PaymentContext');
 const StripeStrategy = require('../strategies/StripeStrategy');
@@ -39,13 +40,24 @@ async function initiatePayment(orderId, userId, provider) {
   const context = new PaymentContext(getStrategy(provider));
   const result = await context.initiate(order);
 
-  const paymentRow = await PaymentModel.create({
-    order_id: order.id,
-    provider,
-    transaction_id: result.transaction_id,
-    status: 'pending',
-    raw_response: result.raw_response
-  });
+  let paymentRow;
+  try {
+    paymentRow = await PaymentModel.create({
+      order_id: order.id,
+      provider,
+      transaction_id: result.transaction_id,
+      status: 'pending',
+      raw_response: result.raw_response
+    });
+  } catch (err) {
+    // transaction_id is unique, a collision here would mean the provider
+    // handed back a reference we've already recorded (or, defensively, some
+    // other unlikely edge case), turn that into a clean 409 instead of a raw 500.
+    if (err instanceof UniqueConstraintError) {
+      throw new ConflictError('A payment with this transaction reference has already been recorded');
+    }
+    throw err;
+  }
 
   const payment = new Payment(paymentRow);
 
