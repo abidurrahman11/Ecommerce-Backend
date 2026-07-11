@@ -1,4 +1,5 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../../src/app');
 const { sequelize, User: UserModel } = require('../../models');
 
@@ -73,6 +74,34 @@ describe('Auth API', () => {
 
   it('rejects /me without a token', async () => {
     const res = await request(app).get('/api/auth/me');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects login for an email that was never registered', async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: `nobody.${Date.now()}@example.com`, password: 'whatever123' });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a malformed (garbage) token on /me', async () => {
+    const res = await request(app).get('/api/auth/me').set('Authorization', 'Bearer not-a-real-token');
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects a token signed with the wrong secret (forged) on /me', async () => {
+    const forgedToken = jwt.sign({ id: 1, role: 'admin' }, 'a-completely-wrong-secret', { expiresIn: '1h' });
+
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${forgedToken}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects an expired token on /me', async () => {
+    // signed with the real secret, but already expired.
+    const expiredToken = jwt.sign({ id: 1, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '-10s' });
+
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${expiredToken}`);
     expect(res.status).toBe(401);
   });
 });
