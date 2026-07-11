@@ -6,6 +6,12 @@ Backend for user management, a product catalog with a category hierarchy, order 
 
 Node.js · Express 5 · PostgreSQL (Sequelize) · Redis · JWT · Joi · Winston · Jest/Supertest
 
+## Frontend
+
+A frontend has been built for this backend:
+- Repository: https://github.com/abidurrahman11/ecommerce_frontend
+- Deployed site: https://ecommerce-frontend-ashen-theta.vercel.app
+
 ## Getting started
 
 ```bash
