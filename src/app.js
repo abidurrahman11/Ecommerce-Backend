@@ -27,6 +27,21 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/health', healthRoutes);
 
+// interactive api docs at /api-docs, only mounted if swagger-ui-express is
+// installed. wrapped in try/catch so a missing optional dependency can never
+// crash the server, the static docs/openapi.json spec always works on its
+// own regardless (importable into postman, swagger editor, insomnia, etc).
+try {
+  // eslint-disable-next-line global-require
+  const swaggerUi = require('swagger-ui-express');
+  // eslint-disable-next-line global-require
+  const openapiSpec = require('../docs/openapi.json');
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+  logger.info('Interactive API docs available at /api-docs');
+} catch (err) {
+  logger.warn('swagger-ui-express not installed, skipping /api-docs. Run `npm install swagger-ui-express` to enable it. docs/openapi.json is still usable directly.');
+}
+
 // Feature routes will be mounted here as they're built, example:
 // use auth routes for register, login and getting the logged in user.
 app.use('/api/auth', require('./routes/auth.routes'));
